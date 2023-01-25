@@ -26,24 +26,30 @@ def colorIsolation(hsv_image):
     upper_Purple = np.array([170, 255, 255])
     lower_Yellow = np.array([0, 160, 120])
     upper_Yellow = np.array([30, 255, 255])
-    lower_Red = np.array([190, 37, 110])
+    lower_Red = np.array([70, 37, 110])
     upper_Red = np.array([200, 255, 255])
+    #KERNELS
+    kernel_erode = np.ones((3, 3), np.uint8)
     #RED
-    Red_mask1 = cv2.inRange(hsv_image, lower_Red, upper_Red)
-    Red_mask=Red_mask1
-    resultRed = cv2.bitwise_and(hsv_image, hsv_image, mask=Red_mask)
+    Red_mask = cv2.inRange(hsv_image, lower_Red, upper_Red)
+    RedMasked = cv2.bitwise_and(hsv_image, hsv_image, mask=Red_mask)
+    Red=cv2.erode(RedMasked, kernel_erode, iterations=1)
+    resultRed = cv2.medianBlur(Red, 7)
     #GREEN
-    Green_mask1 = cv2.inRange(hsv_image, lower_Green, upper_Green)
-    Green_mask = Green_mask1
-    resultGreen = cv2.bitwise_and(hsv_image, hsv_image, mask=Green_mask)
+    Green_mask = cv2.inRange(hsv_image, lower_Green, upper_Green)
+    GreenMasked = cv2.bitwise_and(hsv_image, hsv_image, mask=Green_mask)
+    Green = cv2.erode(GreenMasked, kernel_erode, iterations=1)
+    resultGreen = cv2.medianBlur(Green, 7)
     #YELLOW
-    Yellow_mask1 = cv2.inRange(hsv_image, lower_Yellow, upper_Yellow)
-    Yellow_mask=Yellow_mask1
-    resultYellow = cv2.bitwise_and(hsv_image, hsv_image, mask=Yellow_mask)
+    Yellow_mask = cv2.inRange(hsv_image, lower_Yellow, upper_Yellow)
+    YellowMasked = cv2.bitwise_and(hsv_image, hsv_image, mask=Yellow_mask)
+    Yellow = cv2.erode(YellowMasked, kernel_erode, iterations=1)
+    resultYellow = cv2.medianBlur(Yellow, 7)
     #PURPLE
-    Purple_mask1 = cv2.inRange(hsv_image, lower_Purple, upper_Purple)
-    Purple_mask=Purple_mask1
-    resultPurple = cv2.bitwise_and(hsv_image, hsv_image, mask=Purple_mask)
+    Purple_mask = cv2.inRange(hsv_image, lower_Purple, upper_Purple)
+    PurpleMasked = cv2.bitwise_and(hsv_image, hsv_image, mask=Purple_mask)
+    Purple = cv2.erode(PurpleMasked, kernel_erode, iterations=1)
+    resultPurple=cv2.medianBlur(Purple, 7)
     #RETURN
     return resultGreen,resultRed,resultYellow,resultPurple
 
@@ -81,14 +87,11 @@ def detect(img_path: str) -> Dict[str, int]:
     #CODE
     ogImage= cv2.imread(img_path, cv2.IMREAD_COLOR)
     resized, blured, hsv, brightenedHSV, brightenedBGR=imageInitialProcessing(ogImage,30)
-
     resultGreen, resultRed, resultYellow, resultPurple=colorIsolation(brightenedHSV)
     hori1 = np.concatenate((resultRed, blured,resultPurple), axis=1)
     hori2 = np.concatenate((resultYellow, blured, resultGreen), axis=1)
-
     cv2.imshow('R _ P',hori1)
     cv2.imshow('Y _ G', hori2)
-
     cv2.waitKey()
 
     #END CODE
