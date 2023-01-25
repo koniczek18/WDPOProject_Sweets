@@ -7,23 +7,62 @@ import click
 import cv2
 from tqdm import tqdm
 
-#MASKS
-lower_green=np.array([30, 150, 0])
-upper_green=np.array([70, 255, 255])
+#IMAGE PROCESSING
+def colorIsolation(hsv_image):
+    ''' Function to isolate green, red, yellow and purple colors (sweets) form hsv image
+    Parameters
+    ----------
+    hsv_image
 
-lower_purple=np.array([60, 30, 0])
-upper_purple=np.array([170, 255, 255])
+    Returns
+    -------
+    resultGreen,resultRed,resultYellow,resultPurple
+        isolated images (G,R,Y,P)
+    '''
+    #MASKS
+    lower_Green = np.array([30, 150, 0])
+    upper_Green = np.array([70, 255, 255])
+    lower_Purple = np.array([60, 30, 0])
+    upper_Purple = np.array([170, 255, 255])
+    lower_Yellow = np.array([0, 160, 120])
+    upper_Yellow = np.array([30, 255, 255])
+    lower_Red = np.array([190, 37, 110])
+    upper_Red = np.array([200, 255, 255])
+    #RED
+    Red_mask1 = cv2.inRange(hsv_image, lower_Red, upper_Red)
+    Red_mask=Red_mask1
+    resultRed = cv2.bitwise_and(hsv_image, hsv_image, mask=Red_mask)
+    #GREEN
+    Green_mask1 = cv2.inRange(hsv_image, lower_Green, upper_Green)
+    Green_mask = Green_mask1
+    resultGreen = cv2.bitwise_and(hsv_image, hsv_image, mask=Green_mask)
+    #YELLOW
+    Yellow_mask1 = cv2.inRange(hsv_image, lower_Yellow, upper_Yellow)
+    Yellow_mask=Yellow_mask1
+    resultYellow = cv2.bitwise_and(hsv_image, hsv_image, mask=Yellow_mask)
+    #PURPLE
+    Purple_mask1 = cv2.inRange(hsv_image, lower_Purple, upper_Purple)
+    Purple_mask=Purple_mask1
+    resultPurple = cv2.bitwise_and(hsv_image, hsv_image, mask=Purple_mask)
+    #RETURN
+    return resultGreen,resultRed,resultYellow,resultPurple
 
-lower_yellow=np.array([0, 160, 120])
-upper_yellow=np.array([30, 255, 255])
-
-lower_red = np.array([165,37,110])
-upper_red = np.array([180,255,255])
-
-def imageInitialProcessing(image):
+def imageInitialProcessing(image,brightnessBump=30):
+    #RESIZE
     dim=(720,int((image.shape[0])*720/image.shape[1]))
-    im = cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
-    return im
+    resized = cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
+    #BLUR
+    blured=cv2.medianBlur(resized,5)
+    #HSV
+    hsv = cv2.cvtColor(blured, cv2.COLOR_BGR2HSV)
+    #BRIGHT
+    limit=255-brightnessBump
+    h,s,v=cv2.split(hsv)
+    v[v>limit]=255
+    v[v<=limit]+=brightnessBump
+    brightenedHSV=cv2.merge((h, s, v))
+    brightenedBGR = cv2.cvtColor(brightenedHSV, cv2.COLOR_HSV2BGR)
+    return resized,blured,hsv,brightenedHSV,brightenedBGR
 
 def detect(img_path: str) -> Dict[str, int]:
     """Object detection function, according to the project description, to implement.
@@ -41,26 +80,16 @@ def detect(img_path: str) -> Dict[str, int]:
 
     #CODE
     ogImage= cv2.imread(img_path, cv2.IMREAD_COLOR)
-    resized=imageInitialProcessing(ogImage)
-    hsv = cv2.cvtColor(resized, cv2.COLOR_BGR2HSV)
+    resized, blured, hsv, brightenedHSV, brightenedBGR=imageInitialProcessing(ogImage,30)
 
-    green_mask=cv2.inRange(hsv, lower_green, upper_green)
-    purple_mask = cv2.inRange(hsv, lower_purple, upper_purple)
-    yellow_mask=cv2.inRange(hsv,lower_yellow,upper_yellow)
-    red_mask = cv2.inRange(hsv, lower_red, upper_red)
+    resultGreen, resultRed, resultYellow, resultPurple=colorIsolation(brightenedHSV)
+    hori1 = np.concatenate((resultRed, blured,resultPurple), axis=1)
+    hori2 = np.concatenate((resultYellow, blured, resultGreen), axis=1)
 
-    resultGreen = cv2.bitwise_and(hsv,hsv,mask=green_mask)
-    resultPurple = cv2.bitwise_and(hsv, hsv, mask=purple_mask)
-    resultYellow= cv2.bitwise_and(hsv, hsv, mask=yellow_mask)
-    resultRed = cv2.bitwise_and(hsv, hsv, mask=red_mask)
+    cv2.imshow('R _ P',hori1)
+    cv2.imshow('Y _ G', hori2)
 
-    cv2.imshow('base', resized)
-    #cv2.imshow('green',resultGreen)
-    #cv2.imshow('purple', resultPurple)
-    #cv2.imshow('yellow', resultYellow)
-    cv2.imshow('red', resultRed)
     cv2.waitKey()
-
 
     #END CODE
     #TODO: PROVIDE ANSWEAR
