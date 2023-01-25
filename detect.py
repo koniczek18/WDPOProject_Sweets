@@ -7,6 +7,10 @@ import click
 import cv2
 from tqdm import tqdm
 
+def resize(image):
+    dim=(720,int((image.shape[0])*720/image.shape[1]))
+    print(dim)
+    return cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
 
 def detect(img_path: str) -> Dict[str, int]:
     """Object detection function, according to the project description, to implement.
@@ -22,23 +26,17 @@ def detect(img_path: str) -> Dict[str, int]:
         Dictionary with quantity of each object.
     """
 
-    lower_yellow = np.array([15, 50, 180])
-    upper_yellow = np.array([40, 255, 255])
-    def empty_callback(value):
-        pass
+    #CODE
     OriginalImage = cv2.imread(img_path, cv2.IMREAD_COLOR)
-    hsv = cv2.cvtColor(OriginalImage, cv2.COLOR_BGR2HSV)
-    cv2.namedWindow('image')
-    mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
-    result = cv2.bitwise_and(OriginalImage, OriginalImage, mask=mask)
-    while True:
-        cv2.imshow('image', mask)
-        key_code = cv2.waitKey(10)
-        if key_code == 27:
-            break
+    resized=resize(OriginalImage)
+    hsv = cv2.cvtColor(resized, cv2.COLOR_BGR2HSV)
 
-    #TODO: Implement detection method.
-    
+    cv2.imshow('resized', resized)
+    cv2.imshow('original', OriginalImage)
+    cv2.imshow('hsv', hsv)
+
+    cv2.waitKey()
+
     red = 0
     yellow = 0
     green = 0
